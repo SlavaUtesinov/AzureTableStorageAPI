@@ -79,7 +79,9 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="AzureTests.cs" />
+    <Compile Include="FilterTests.cs" />
+    <Compile Include="CoreTests.cs" />
+    <Compile Include="BaseTests.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

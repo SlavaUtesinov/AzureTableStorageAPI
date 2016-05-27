@@ -46,12 +46,14 @@ namespace AzureTableStorageService
             var keys = GetParams(predicate, out pattern);
 
             var result = predicate.Body.ToString().Replace(predicate.Parameters.First().Name + ".", "").Replace($"{pattern}.", "");
-
-            var args = keys.Where(x => pattern.Contains(x.GetType().Name)).FirstOrDefault();
+            
             var argsList = new Dictionary<string, object> { { "True", "true" }, { "False", "false" } };
-            if (args != null)
+            if (pattern != null)
+            {
+                var args = keys.Where(x => pattern.Contains(x.GetType().Name)).FirstOrDefault();
                 foreach (var item in args.GetType().GetFields().Select(x => new { x.Name, Values = x.GetValue(args) }))
                     argsList.Add(item.Name, item.Values);
+            }                
 
             var i = 1;
             foreach (var field in argsList)
@@ -64,12 +66,12 @@ namespace AzureTableStorageService
             return ReplaceLongValues(ReplaceConditions(result).Replace("\"", "\'"));
         }
 
-        private static string GetAzureString(object value)
+        static string GetAzureString(object value)
         {
             return ToAzureType[value.GetType()](value).Replace(" ", "");
         }
 
-        private static string ReplaceLongValues(string input)
+        static string ReplaceLongValues(string input)
         {
             var result = Regex.Matches(input, @"\s?-?\d{10,}\s?");
             foreach (var match in result)
@@ -93,14 +95,14 @@ namespace AzureTableStorageService
             return input;
         }
 
-        private static string ReplaceConditions(string condition)
+        static string ReplaceConditions(string condition)
         {
             foreach (var token in ToAzureCondition)
                 condition = condition.Replace(" " + token.Key + (token.Key == "Not" ? "" : " "), " " + token.Value + (token.Key == "Not" ? "" : " "));
             return condition;
         }
 
-        private static List<object> GetParams<T>(Expression<Func<T, bool>> predicate, out string pattern)
+        static List<object> GetParams<T>(Expression<Func<T, bool>> predicate, out string pattern)
             where T : class
         {
             pattern = null;
@@ -109,7 +111,7 @@ namespace AzureTableStorageService
             return keys.Distinct().ToList();
         }
 
-        private static void Iterate(PropertyInfo prop, object model, List<object> keys, ref string pattern)
+        static void Iterate(PropertyInfo prop, object model, List<object> keys, ref string pattern)
         {
             var propVal = prop.GetValue(model);
             var typeOfPropVal = propVal.GetType();
