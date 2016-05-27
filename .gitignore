@@ -243,3 +243,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/AzureTableStorageService/nuget.exe
+/AzureTableStorageService/AzureTableStorageService.nuspec
