@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AzureTableStorageService
+namespace AzureTableStorage
 {
-    public interface IAzureStorageTableService
+    public interface IAzureTableStorageAPI
     {
         string TableName { get; set; }
         CancellationToken CancellationToken { get; set; }

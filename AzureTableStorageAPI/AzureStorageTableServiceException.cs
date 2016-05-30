@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AzureTableStorageService
+namespace AzureTableStorage
 {    
-    public class AzureStorageTableServiceException : Exception
+    public class AzureTableStorageAPIException : Exception
     {
-        public AzureStorageTableServiceException(string message)
+        public AzureTableStorageAPIException(string message)
             : base(message)
         {
         }

@@ -86,9 +86,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AzureTableStorageService\AzureTableStorageService.csproj">
+    <ProjectReference Include="..\AzureTableStorageAPI\AzureTableStorageAPI.csproj">
       <Project>{96ad7356-dbfe-4e6e-b3b4-64cfaf0d9dec}</Project>
-      <Name>AzureTableStorageService</Name>
+      <Name>AzureTableStorageAPI</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

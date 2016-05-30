@@ -11,9 +11,9 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AzureTableStorageService
+namespace AzureTableStorage
 {    
-    public class AzureStorageTableService : IAzureStorageTableService
+    public class AzureTableStorageAPI : IAzureTableStorageAPI
     {
         public string TableName { get; set; }
         public CancellationToken CancellationToken { get; set; }
@@ -29,7 +29,7 @@ namespace AzureTableStorageService
             CloudTable table2;
             var tableName = TableName ?? target.Name.Replace("_", "") + "Table";
             if (CreateIfNotExists && attempt2delete)
-                throw new AzureStorageTableServiceException($"It is not possible to create and delete table {tableName} simultaneously.");
+                throw new AzureTableStorageAPIException($"It is not possible to create and delete table {tableName} simultaneously.");
 
             if (tables.TryGetValue(tableName, out table))
                 return table;
@@ -59,12 +59,12 @@ namespace AzureTableStorageService
                     }
                 } while (counter < attempts);
                 if (counter == attempts)
-                    throw new AzureStorageTableServiceException($"Table {tableName} was not created {attempts} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.");
+                    throw new AzureTableStorageAPIException($"Table {tableName} was not created {attempts} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.");
             }
 
             var exist = table.Exists();
             if (!exist && !attempt2delete)
-                throw new AzureStorageTableServiceException($"Table {tableName} should be created at first!");
+                throw new AzureTableStorageAPIException($"Table {tableName} should be created at first!");
 
             if (exist)
                 tables.AddOrUpdate(tableName, table, (key, value) => value);
@@ -91,7 +91,7 @@ namespace AzureTableStorageService
                     Thread.Sleep(2000 + random.Next(0, 3000));
                 } while (counter < attempts);
                 if (counter == attempts)
-                    throw new AzureStorageTableServiceException($"Failed to delete reference from dictionary on table {name} {attempts} attempts.");
+                    throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} {attempts} attempts.");
             }                       
 
             return res;

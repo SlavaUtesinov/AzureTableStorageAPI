@@ -70,13 +70,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AzureConditionBuilderExtention.cs" />
-    <Compile Include="AzureStorageTableService.cs" />
+    <Compile Include="AzureStorageTableAPI.cs" />
     <Compile Include="AzureStorageTableServiceException.cs" />
     <Compile Include="IAzureStorageTableService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -85,7 +87,7 @@
   </Target>
   -->
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
-    <Exec Command="nuget pack AzureTableStorageService.csproj -Prop Configuration=Release"></Exec>
+    <Exec Command="nuget pack AzureTableStorageAPI.csproj -Prop Configuration=Release">
+    </Exec>
   </Target>
-  
 </Project>

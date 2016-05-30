@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureTableStorageService", "AzureTableStorageService\AzureTableStorageService.csproj", "{96AD7356-DBFE-4E6E-B3B4-64CFAF0D9DEC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureTableStorageAPI", "AzureTableStorageAPI\AzureTableStorageAPI.csproj", "{96AD7356-DBFE-4E6E-B3B4-64CFAF0D9DEC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{031A25F9-3D8E-4729-B14C-478A0AF3385D}"
 EndProject

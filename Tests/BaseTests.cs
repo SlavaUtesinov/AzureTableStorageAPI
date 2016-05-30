@@ -1,4 +1,4 @@
-﻿using AzureTableStorageService;
+﻿using AzureTableStorage;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ namespace Tests
 {    
     public abstract class BaseTests
     {
-        protected static IAzureStorageTableService service { get; set; } = new AzureStorageTableService();
+        protected static IAzureTableStorageAPI service { get; set; } = new AzureTableStorageAPI();
         protected static List<Event> initialData { get; set; } = new List<Event>();
         protected static object lockObject { get; } = new object();
 
