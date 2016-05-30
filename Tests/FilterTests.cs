@@ -10,26 +10,17 @@ namespace Tests
     [TestClass]
     public class FilterTests : BaseTests
     {
-        [TestInitialize]
-        public override void Initialize()
-        {
-            base.Initialize();
-        }
-
-        [TestCleanup]
-        public override void Cleanup()
-        {
-            base.Cleanup();
-        }
-
         protected void Template(Func<List<Event>> azureLoader, DateTime date)
-        {            
-            var azure = azureLoader();
-            var local = initialData.Where(x => (x.PartitionKey == "Political" && !(x.Сost <= 50000.55) && 200000 < x.NumberOfParticipants) || (x.Positive == true && x.DateTime >= date)).ToList();
+        {
+            LockWrapper(() => 
+            {
+                var azure = azureLoader();
+                var local = initialData.Where(x => (x.PartitionKey == "Political" && !(x.Сost <= 50000.55) && 200000 < x.NumberOfParticipants) || (x.Positive == true && x.DateTime >= date)).ToList();
 
-            Assert.AreNotEqual(0, local.Count);
-            Assert.AreEqual(azure.Count, local.Count);
-            Assert.AreEqual(azure.Count, azure.Join(local, x => x.RowKey, x => x.RowKey, (a, b) => a).Count());
+                Assert.AreNotEqual(0, local.Count);
+                Assert.AreEqual(azure.Count, local.Count);
+                Assert.AreEqual(azure.Count, azure.Join(local, x => x.RowKey, x => x.RowKey, (a, b) => a).Count());
+            });
         }
 
         [TestMethod]

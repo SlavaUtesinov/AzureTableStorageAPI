@@ -16,6 +16,8 @@ namespace AzureTableStorageService
     public class AzureStorageTableService : IAzureStorageTableService
     {
         public string TableName { get; set; }
+        public CancellationToken CancellationToken { get; set; }
+
         //https://msdn.microsoft.com/en-us/library/azure/dd894038.aspx
         private const int maxPackSize = 100;        
         private static ConcurrentDictionary<string, CloudTable> tables = new ConcurrentDictionary<string, CloudTable>();
@@ -90,8 +92,7 @@ namespace AzureTableStorageService
                 } while (counter < attempts);
                 if (counter == attempts)
                     throw new AzureStorageTableServiceException($"Failed to delete reference from dictionary on table {name} {attempts} attempts.");
-            }
-            TableName = null;                
+            }                       
 
             return res;
         }
@@ -187,13 +188,16 @@ namespace AzureTableStorageService
         }
 
         private void BatchOperationAtom<T>(List<T> entities, Func<T, TableOperation> operation) where T : TableEntity
-        {            
+        {
+            if (CancellationToken != null)
+                CancellationToken.ThrowIfCancellationRequested();
+
             var batchOperation = new TableBatchOperation();
             entities.ForEach(x => batchOperation.Add(operation(x)));
             GetTable(entities.First().GetType(), true).ExecuteBatch(batchOperation);
         }        
 
-        private bool ProcessEntitiesParallel<T>(List<T> entities, Action<List<T>> action, int? timeout) where T : TableEntity
+        private bool ProcessEntitiesParallel<T>(List<T> entities, Action<List<T>> action, int? timeout, CancellationToken token, int maxNumberOfTasks) where T : TableEntity
         {
             if (entities == null || entities.Count == 0)
                 return false;
@@ -224,17 +228,17 @@ namespace AzureTableStorageService
 #endif
             }
 
-            return Task.WaitAll(tasks, timeout ?? int.MaxValue);
+            return Task.WaitAll(tasks, timeout ?? int.MaxValue, token);
         }
 
-        public bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null) where T : TableEntity
+        public bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
         {            
-            return ProcessEntitiesParallel(entities, RemoveEntitiesSequentially, timeout);
+            return ProcessEntitiesParallel(entities, RemoveEntitiesSequentially, timeout, token, maxNumberOfTasks);
         }
 
-        public bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null) where T : TableEntity
+        public bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
         {            
-            return ProcessEntitiesParallel(entities, AddEntitiesSequentially, timeout);
+            return ProcessEntitiesParallel(entities, AddEntitiesSequentially, timeout, token, maxNumberOfTasks);
         }
 
         public void AddEntitiesSequentially<T>(List<T> entities) where T : TableEntity

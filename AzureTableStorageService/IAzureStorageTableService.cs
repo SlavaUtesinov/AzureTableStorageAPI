@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzureTableStorageService
@@ -11,15 +12,19 @@ namespace AzureTableStorageService
     public interface IAzureStorageTableService
     {
         string TableName { get; set; }
+        CancellationToken CancellationToken { get; set; }
+
         bool DeleteTable(string name);
 
         void AddEntity(TableEntity entity);
         void AddEntitiesSequentially<T>(List<T> entities) where T : TableEntity;
-        bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null) where T : TableEntity;
+        bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4)
+            where T : TableEntity;
 
         void RemoveEntity(TableEntity entity);
         void RemoveEntitiesSequentially<T>(List<T> entities) where T : TableEntity;
-        bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null) where T : TableEntity;
+        bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) 
+            where T : TableEntity;
 
         T GetEntity<T>(string PartitionKey, string RowKey) where T : TableEntity;
         List<T> GetEntities<T>(Expression<Func<T, bool>> predicate = null) where T : TableEntity, new();

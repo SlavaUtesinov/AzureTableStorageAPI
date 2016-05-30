@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tests
@@ -12,6 +13,7 @@ namespace Tests
     {
         protected static IAzureStorageTableService service { get; set; } = new AzureStorageTableService();
         protected static List<Event> initialData { get; set; } = new List<Event>();
+        protected static object lockObject { get; } = new object();
 
         protected List<Event> GenerateData(int count = 1000)
         {
@@ -25,6 +27,16 @@ namespace Tests
             }
             return data;
         }
+
+        protected void LockWrapper(Action test)
+        {
+            lock(lockObject)
+            {
+                Initialize();
+                test();
+                Cleanup();
+            }
+        }
         
         public virtual void Initialize()
         {
@@ -34,7 +46,9 @@ namespace Tests
         
         public virtual void Cleanup()
         {
-            service.DeleteTable("EventTable");
+            service.CancellationToken = default(CancellationToken);
+            service.TableName = null;
+            service.DeleteTable("EventTable");            
         }
     }
 }
