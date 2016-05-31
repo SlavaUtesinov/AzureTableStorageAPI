@@ -148,7 +148,7 @@ namespace AzureTableStorage
         }
 
         private TableQuery<T> PrepareTableQuery<T>(Expression<Func<T, bool>> predicate)
-            where T : class
+            where T : TableEntity
         {
             var tableQuery = new TableQuery<T>();
 

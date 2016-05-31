@@ -40,7 +40,7 @@ namespace AzureTableStorage
         }
 
         public static string GetAzureCondition<T>(this Expression<Func<T, bool>> predicate)
-            where T : class
+            where T : TableEntity
         {
             string pattern;
             var keys = GetParams(predicate, out pattern);

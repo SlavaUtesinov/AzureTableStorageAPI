@@ -71,8 +71,8 @@
   <ItemGroup>
     <Compile Include="AzureConditionBuilderExtention.cs" />
     <Compile Include="AzureStorageTableAPI.cs" />
-    <Compile Include="AzureStorageTableServiceException.cs" />
-    <Compile Include="IAzureStorageTableService.cs" />
+    <Compile Include="AzureTableStorageAPIException.cs" />
+    <Compile Include="IAzureTableStorageAPI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
