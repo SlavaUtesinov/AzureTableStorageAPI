@@ -45,7 +45,7 @@ Table of contents
 
 ## Conventions
 
-There is the only one convention - when you perform any operations, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](https://stackedit.io/editor#usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
+There is the only one convention - when you perform any operations, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](#usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
 
 ## Core operations
 Let's consider some class, inherited from `TableEntity` type, which we will use at all examples below:
@@ -95,7 +95,7 @@ If you want to cancel execution of this operation, you can assign `CancellationT
     service.CancellationToken = source.Token;
     service.AddEntitiesParallel(data, timeout: 5000);
     source.Cancel();
-But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](https://stackedit.io/editor#conventions) property.    
+But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](#conventions) property.    
 
 ###Get
 ####GetEntity
@@ -149,7 +149,7 @@ GetBigDataEntities method also supports predicate usage.
     service.CancellationToken = source1.Token;
     service.RemoveEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
 
-All what was said about [AddEntitiesParallel](https://stackedit.io/editor#addentitiesparallel): timeout, token, maxNumberOfTasks, CancellationToken is fully applicable to RemoveEntitiesParallel method.
+All what was said about [AddEntitiesParallel](#addentitiesparallel): timeout, token, maxNumberOfTasks, CancellationToken is fully applicable to RemoveEntitiesParallel method.
 
 > **Note** 
 > If you want to delete entities, that were no initially received from Azure server, you will take a exception,  because of concurrency checking on server side. But `AzureTableStorageAPI` will check all entities, that you intent to remove and, if it needed,  will reload some of them before execution of remove operation, so you shouldn't worry about this situation.
