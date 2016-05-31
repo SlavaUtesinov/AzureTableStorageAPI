@@ -1,10 +1,10 @@
 # AzureTableStorageAPI
 
-## Summary
+## 1. Summary
 
 This project dedicated to working with Azure Storage Tables. With it's help you can add, read and delete data from it. Most of this operations can be performed parallel and by batches with caching, that provides significant increase of performance. Also when you want to get data, you can specify complicated condition in **Entity Framework** *.Where* style.
 
-## Usage example
+## 2. Usage example
 
     var api = new AzureTableStorageAPI();
     var person = new Person{ RowKey = "1", PartitionKey = "Man", Age = 27, Name = "Tom", Address = "London", PostalCode = 121343 };
@@ -20,34 +20,35 @@ This project dedicated to working with Azure Storage Tables. With it's help you 
 Table of contents
 -------------------
 
-* [Summary](#summary)
-* [Usage example](#usage-example)
-* [Conventions](#conventions)
-* [Core operations](#core-operations)
-     * [Add](#add)		     	                    
+1. [Summary](#1-summary)
+2. [Usage example](#2-usage-example)
+3. [Conventions](#3-conventions)
+4. [Core operations](#4-core-operations)
+    * [Add](#add)		     	                    
        * [AddEntity](#addentity)
        * [AddEntitiesSequentially](#addentitiessequentially)
        * [AddEntitiesParallel](#addentitiesparallel)
-     * [Get](#get)    
+    * [Get](#get)    
        * [GetEntity](#getentity)
        * [GetEntities](#getentities)
        * [GetBigDataEntities](#getbigdataentities)
        * [GetDataWithConditions](#getdatawithconditions)
-     * [Remove](#remove)
+    * [Remove](#remove)
        * [RemoveEntity](#removeentity)
        * [RemoveEntitiesSequentially](#removeentitiessequentially)
        * [RemoveEntitiesParallel](#removeentitiesparallel)
      * [Delete table](#delete-table)   
-* [Tests](#tests)
-* [How to install](#how-to-install)
-* [License](#license)  
+5. [Tests](#5-tests)
+6. [How to install](#6-how-to-install)
+7. [License](#7-license)  
   
-
-## Conventions
+[back to top](#table-of-contents)
+## 3. Conventions
 
 There is the only one convention - when you perform any operations, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](#usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
 
-## Core operations
+[back to top](#table-of-contents)
+## 4. Core operations
 Let's consider some class, inherited from `TableEntity` type, which we will use at all examples below:
 
     public class Event : TableEntity
@@ -60,12 +61,13 @@ Let's consider some class, inherited from `TableEntity` type, which we will use 
         public string Description { get; set; }        
         public DateTime DateTime { get; set; }
         public bool Positive { get; set; }
-        public double Ñost { get; set; }
+        public double Cost { get; set; }
     }
 And instance of `AzureTableStorageAPI` class:
 
     var service = new new AzureTableStorageAPI();
 
+[back to top](#table-of-contents)
 ### Add
 ####AddEntity
 
@@ -97,6 +99,7 @@ If you want to cancel execution of this operation, you can assign `CancellationT
     source.Cancel();
 But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](#conventions) property.    
 
+[back to top](#table-of-contents)
 ###Get
 ####GetEntity
 
@@ -133,6 +136,7 @@ If you want to get not only the one entity by specifying `PartitionKey` and `Row
 
 GetBigDataEntities method also supports predicate usage.
 
+[back to top](#table-of-contents)
 ###Remove
 ####RemoveEntity
 
@@ -154,21 +158,25 @@ All what was said about [AddEntitiesParallel](#addentitiesparallel): timeout, to
 > **Note** 
 > If you want to delete entities, that were no initially received from Azure server, you will take a exception,  because of concurrency checking on server side. But `AzureTableStorageAPI` will check all entities, that you intent to remove and, if it needed,  will reload some of them before execution of remove operation, so you shouldn't worry about this situation.
 
+[back to top](#table-of-contents)
 ###Delete table
 
-    service.DeleteTable("EventTable");
+    service.DeleteTable("EventTable");    
 
-##Tests
+[back to top](#table-of-contents)
+##5. Tests
 
 This repository consists of two projects: core project and Tests project. Tests contains a lot of examples, that show how to use core project assembly, most of them are shown at this documentation. I used [Azure Storage Emulator](https://azure.microsoft.com/en-us/documentation/articles/storage-use-emulator/). It redirects all queries to your local database. Connection string at this case, as you can read, is constant and presented at App.config file. Sure you can use your own  connection string.
 
-##How to install
+[back to top](#table-of-contents)
+##6. How to install
 
 With the help of [Nuget](https://www.nuget.org/):
 
     PM> Install-Package Azure.TableStorage.API
 
-##License
+[back to top](#table-of-contents)
+##7. License
 The MIT License (MIT)
 
 Copyright (c) 2016 Slava Utesinov
@@ -182,4 +190,4 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
 ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH 
-THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE..
