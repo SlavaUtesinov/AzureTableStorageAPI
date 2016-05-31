@@ -45,7 +45,7 @@ Table of contents
 [back to top](#table-of-contents)
 ## 3. Conventions
 
-There is the only one convention - when you perform any operations, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](#usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
+There is the only one convention - when you perform any operations, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](#2-usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
 
 [back to top](#table-of-contents)
 ## 4. Core operations
@@ -97,7 +97,7 @@ If you want to cancel execution of this operation, you can assign `CancellationT
     service.CancellationToken = source.Token;
     service.AddEntitiesParallel(data, timeout: 5000);
     source.Cancel();
-But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](#conventions) property.    
+But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](#3-conventions) property.    
 
 [back to top](#table-of-contents)
 ###Get
