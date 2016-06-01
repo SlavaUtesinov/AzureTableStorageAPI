@@ -37,7 +37,11 @@ Table of contents
        * [RemoveEntity](#removeentity)
        * [RemoveEntitiesSequentially](#removeentitiessequentially)
        * [RemoveEntitiesParallel](#removeentitiesparallel)
-     * [Delete table](#delete-table)   
+    * [Update](#update)
+       * [UpdateEntity](#updateentity)
+       * [UpdateEntitiesSequentially](#updateentitiessequentially)
+       * [UpdateEntitiesParallel](#updateentitiesparallel)
+    * [Delete table](#delete-table)   
 5. [Tests](#5-tests)
 6. [Notes](#6-notes)
 7. [How to install](#7-how-to-install)
@@ -158,6 +162,23 @@ Anything was said about [AddEntitiesParallel](#addentitiesparallel): timeout, to
 
 > **Note** 
 > If you want to delete entities, that were no initially received from Azure server, you will take a exception, because of concurrency checking on server side. But `AzureTableStorageAPI` will check all entities, that you intent to remove and, if it is needed,  will reload some of them before execution of remove operation, so you shouldn't worry about this situation.
+
+[back to top](#table-of-contents)
+###Update
+Anything was said about [Remove](#remove) **is fully applicable** to [Update](#update) section, sure, except of meaning of operation.
+####UpdateEntity
+
+    service.UpdateEntity(item);
+
+####UpdateEntitiesSequentially    
+
+    service.UpdateEntitiesSequentially(items);
+####UpdateEntitiesParallel
+    var source1 = new CancellationTokenSource();
+    var source2 = new CancellationTokenSource();
+    
+    service.CancellationToken = source1.Token;
+    service.UpdateEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
 
 [back to top](#table-of-contents)
 ###Delete table

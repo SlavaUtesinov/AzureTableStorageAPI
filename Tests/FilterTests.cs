@@ -24,6 +24,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Filter")]
         public void GetEntitiesWithFilter()
         {
             var date = DateTime.Now.AddDays(-500);
@@ -31,6 +32,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Filter")]
         public void GetBigDataEntitiesWithFilter()
         {
             var date = DateTime.Now.AddDays(-500);

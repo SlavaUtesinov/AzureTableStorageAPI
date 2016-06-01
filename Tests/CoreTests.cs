@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Diagnostics;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Tests
 {
@@ -26,6 +27,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Add")]
         public void AddEntity()
         {
             LockWrapper(() => 
@@ -37,6 +39,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Add")]
         public void AddEntitiesSequentially()
         {
             LockWrapper(() =>
@@ -46,6 +49,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Add")]
         public void AddEntitiesParallel()
         {
             LockWrapper(() =>
@@ -55,7 +59,8 @@ namespace Tests
             });
         }
 
-        [TestMethod]        
+        [TestMethod]
+        [TestCategory("Add")]
         public void AddEntitiesParallelWithCancellationToken()
         {
             LockWrapper(() =>
@@ -76,6 +81,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Get")]
         public void GetBigDataEntities()
         {
             LockWrapper(() =>
@@ -85,6 +91,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Remove")]
         public void RemoveEntity()
         {
             LockWrapper(() =>
@@ -95,6 +102,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Remove")]
         public void RemoveEntitiesSequentially()
         {
             LockWrapper(() =>
@@ -105,6 +113,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Remove")]
         public void RemoveEntitiesParallel()
         {
             LockWrapper(() =>
@@ -115,6 +124,7 @@ namespace Tests
         }
 
         [TestMethod]
+        [TestCategory("Remove")]
         public void RemoveEntitiesParallelWithCancellationToken()
         {
             LockWrapper(() =>
@@ -134,7 +144,103 @@ namespace Tests
             });
         }
 
+        private void UpdateTemplate(Action<Event> testMethod)
+        {
+            LockWrapper(() =>
+            {
+                var entity = initialData.First();
+                var guid = Guid.NewGuid();
+                entity.Code = guid;
+                testMethod(entity);
+
+                service.GetEntities<Event>(x => x.Code == guid).First();
+            });
+        }
+
         [TestMethod]
+        [TestCategory("Update")]
+        public void UpdateEntity()
+        {
+            UpdateTemplate(service.UpdateEntity);            
+        }
+
+        private void UpdateEntitiesTemplate(Action<List<Event>> testMethod)
+        {
+            LockWrapper(() =>
+            {
+                var entities = initialData.Take(100).ToList();
+                var guid = Guid.NewGuid();
+                var date = DateTime.Now;
+                entities.ForEach(x =>
+                {
+                    x.DateTime = date;
+                    x.Code = guid;
+                });
+
+                testMethod(entities);
+
+                var remote = service.GetEntities<Event>(x => x.Code == guid && x.DateTime == date);
+                Assert.AreEqual(entities.Count, remote.Count);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("Update")]
+        public void UpdateEntitiesSequentially()
+        {
+            UpdateEntitiesTemplate(service.UpdateEntitiesSequentially);               
+        }
+
+        [TestMethod]
+        [TestCategory("Update")]
+        public void UpdateEntitiesParallel()
+        {
+            UpdateEntitiesTemplate((x) => {
+                service.UpdateEntitiesParallel(x);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("DoOperations")]
+        public void DoOperations()
+        {
+            UpdateTemplate((x) => service.DoOperation(x, TableOperation.Replace));
+
+            UpdateEntitiesTemplate((x) => {
+                service.DoOperationsSequentially(x, TableOperation.Replace);
+            });
+
+            UpdateEntitiesTemplate((x) => {
+                service.DoOperationsParallel(x, TableOperation.Replace);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("DoOperations")]
+        public void DoOperationsInsertOrReplace()
+        {
+            LockWrapper(() =>
+            {
+                var existing = initialData.Where(x => x.PartitionKey == "Political").ToList();
+                var guid = Guid.NewGuid();
+                existing.ForEach(x => x.Code = guid);
+
+                var newOnes = GenerateData(500);
+                newOnes.ForEach(x => x.Code = guid);
+
+                var all = existing.Union(newOnes).ToList();
+
+                service.DoOperationsParallel(all, TableOperation.InsertOrReplace);
+
+                var remote = service.GetEntities<Event>(x => x.Code == guid);
+                Assert.AreEqual(all.Count, remote.Count);
+
+                Assert.AreEqual(existing.Count, existing.Join(remote, x => x.RowKey, x => x.RowKey, (a, b) => a).Count());
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("Convention")]
         public void ChangeConventionTableName()
         {
             LockWrapper(() =>

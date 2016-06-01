@@ -30,12 +30,18 @@ namespace Tests
 
         protected void LockWrapper(Action test)
         {
-            lock(lockObject)
+            lock (lockObject)
             {
-                Initialize();
-                test();
-                Cleanup();
-            }
+                try
+                {
+                    Initialize();
+                    test();
+                }
+                finally
+                {
+                    Cleanup();
+                }
+            }                     
         }
         
         public virtual void Initialize()

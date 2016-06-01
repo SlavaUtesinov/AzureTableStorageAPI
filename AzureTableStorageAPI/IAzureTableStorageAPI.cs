@@ -26,6 +26,16 @@ namespace AzureTableStorage
         bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) 
             where T : TableEntity;
 
+        void UpdateEntity(TableEntity entity);
+        void UpdateEntitiesSequentially<T>(List<T> entities) where T : TableEntity;
+        bool UpdateEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4)
+            where T : TableEntity;
+
+        void DoOperation(TableEntity entity, Func<TableEntity, TableOperation> operation);
+        void DoOperationsSequentially<T>(List<T> entities, Func<TableEntity, TableOperation> operation) where T : TableEntity;
+        bool DoOperationsParallel<T>(List<T> entities, Func<TableEntity, TableOperation> operation, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4)
+            where T : TableEntity;
+
         T GetEntity<T>(string PartitionKey, string RowKey) where T : TableEntity;
         List<T> GetEntities<T>(Expression<Func<T, bool>> predicate = null) where T : TableEntity, new();
         List<T> GetBigDataEntities<T>(Expression<Func<T, bool>> predicate = null) where T : TableEntity, new();

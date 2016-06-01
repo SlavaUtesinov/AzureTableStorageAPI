@@ -20,7 +20,7 @@ namespace AzureTableStorage
             ToAzureType = new Dictionary<Type, Func<object, string>>();
             ToAzureType[typeof(string)] = (x) => TableQuery.GenerateFilterCondition("", "", x.ToString());
             ToAzureType[typeof(bool)] = (x) => TableQuery.GenerateFilterConditionForBool("", "", (bool)x);
-            ToAzureType[typeof(DateTime)] = (x) => TableQuery.GenerateFilterConditionForDate("", "", ((DateTime)x).Add(TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow)));
+            ToAzureType[typeof(DateTime)] = (x) => TableQuery.GenerateFilterConditionForDate("", "", ((DateTime)x));
             ToAzureType[typeof(double)] = (x) => TableQuery.GenerateFilterConditionForDouble("", "", (double)x);
             ToAzureType[typeof(Guid)] = (x) => TableQuery.GenerateFilterConditionForGuid("", "", (Guid)x);
             ToAzureType[typeof(int)] = (x) => TableQuery.GenerateFilterConditionForInt("", "", (int)x);

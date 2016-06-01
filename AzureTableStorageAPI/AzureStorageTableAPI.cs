@@ -98,36 +98,40 @@ namespace AzureTableStorage
             return res;
         }
 
-        public void AddEntity(TableEntity entity)
+
+        #region DoOperation
+        public void DoOperation(TableEntity entity, Func<TableEntity, TableOperation> operation)
         {
             if (entity == null)
                 return;
 
-            var insertOperation = TableOperation.Insert(entity);            
-            GetTable(entity.GetType(), true).Execute(insertOperation);
-        }
-
-        public void RemoveEntity(TableEntity entity)
-        {
-            if (entity == null)
-                return;
-
-            var originType = entity.GetType();
-            Action<TableEntity> func = (item) =>
-            {
-                var deleteOperation = TableOperation.Delete(item);
-                GetTable(originType).Execute(deleteOperation);
-            };
+            var originType = entity.GetType();            
 
             if (!string.IsNullOrEmpty(entity.ETag))
-                func(entity);
+                GetTable(originType).Execute(operation(entity));
             else
             {
-                var deleteEntity = _GetEntity<TableEntity>(entity.PartitionKey, entity.RowKey, originType);
-                func(deleteEntity);
-            }           
+                _GetEntity<TableEntity>(entity.PartitionKey, entity.RowKey, originType);
+                GetTable(originType).Execute(operation(entity));
+            }
         }
 
+        public void DoOperationsSequentially<T>(List<T> entities, Func<TableEntity, TableOperation> operation) where T : TableEntity
+        {            
+            if(!(new Func<TableEntity, TableOperation>[] { TableOperation.Insert, TableOperation.InsertOrMerge, TableOperation.InsertOrReplace }.Contains(operation)))
+                foreach (var item in entities.Where(x => x.ETag == null))
+                    item.ETag = _GetEntity<T>(item.PartitionKey, item.RowKey).ETag;
+
+            BatchOperationPortion(entities, operation);
+        }
+
+        public bool DoOperationsParallel<T>(List<T> entities, Func<TableEntity, TableOperation> operation, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
+        {
+            return ProcessEntitiesParallel(entities, (x) => DoOperationsSequentially(x, operation), timeout, token, maxNumberOfTasks);
+        }
+        #endregion
+
+        #region Get
         public T GetEntity<T>(string PartitionKey, string RowKey) where T : TableEntity
         {
             return _GetEntity<T>(PartitionKey, RowKey);
@@ -148,15 +152,28 @@ namespace AzureTableStorage
             return GetTable(typeof(T)).ExecuteQuery(PrepareTableQuery(predicate)).ToList();
         }
 
+        public List<T> GetBigDataEntities<T>(Expression<Func<T, bool>> predicate = null) where T : TableEntity, new()
+        {
+            TableContinuationToken token = null;
+            var result = new List<T>();
+            var table = GetTable(typeof(T));
+            var condition = PrepareTableQuery(predicate);
+            do
+            {
+                var answer = table.ExecuteQuerySegmented(condition, token);
+                result.AddRange(answer);
+                token = answer.ContinuationToken;
+
+            } while (token != null);
+            return result;
+        }
+        #endregion
+
+        #region Private
         private TableQuery<T> PrepareTableQuery<T>(Expression<Func<T, bool>> predicate)
             where T : TableEntity
-        {
-            var tableQuery = new TableQuery<T>();
-
-            if (predicate != null)            
-                tableQuery = tableQuery.Where(predicate.GetAzureCondition());            
-
-            return tableQuery;
+        {            
+            return predicate != null ? new TableQuery<T>().Where(predicate.GetAzureCondition()) : new TableQuery<T>();
         }                
 
         private void BatchOperationPortion<T>(List<T> entities, Func<T, TableOperation> operation) where T : TableEntity
@@ -231,44 +248,61 @@ namespace AzureTableStorage
 
             return Task.WaitAll(tasks, timeout ?? int.MaxValue, token);
         }
+        #endregion
+
+        #region Remove
+        public void RemoveEntity(TableEntity entity)
+        {
+            DoOperation(entity, TableOperation.Delete);
+        }
+
+        public void RemoveEntitiesSequentially<T>(List<T> entities) where T : TableEntity
+        {
+            DoOperationsSequentially(entities, TableOperation.Delete);
+        }
 
         public bool RemoveEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
         {            
             return ProcessEntitiesParallel(entities, RemoveEntitiesSequentially, timeout, token, maxNumberOfTasks);
         }
+        #endregion
 
-        public bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
-        {            
-            return ProcessEntitiesParallel(entities, AddEntitiesSequentially, timeout, token, maxNumberOfTasks);
+        #region Add
+        public void AddEntity(TableEntity entity)
+        {
+            if (entity == null)
+                return;
+
+            var insertOperation = TableOperation.Insert(entity);
+            GetTable(entity.GetType(), true).Execute(insertOperation);
         }
 
         public void AddEntitiesSequentially<T>(List<T> entities) where T : TableEntity
         {
-            BatchOperationPortion(entities, (x) => TableOperation.Insert(x));
+            BatchOperationPortion(entities, TableOperation.Insert);
         }
 
-        public void RemoveEntitiesSequentially<T>(List<T> entities) where T : TableEntity
+        public bool AddEntitiesParallel<T>(List<T> entities, int? timeout = null, CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
         {
-            foreach (var item in entities.Where(x => x.ETag == null))
-                item.ETag = _GetEntity<T>(item.PartitionKey, item.RowKey).ETag;
-
-            BatchOperationPortion(entities, (x) => TableOperation.Delete(x));
+            return ProcessEntitiesParallel(entities, AddEntitiesSequentially, timeout, token, maxNumberOfTasks);
         }
+        #endregion
 
-        public List<T> GetBigDataEntities<T>(Expression<Func<T, bool>> predicate = null) where T : TableEntity, new()
+        #region Update
+        public void UpdateEntity(TableEntity entity)
         {
-            TableContinuationToken token = null;
-            var result = new List<T>();
-            var table = GetTable(typeof(T));
-            var condition = PrepareTableQuery(predicate);
-            do
-            {
-                var answer = table.ExecuteQuerySegmented(condition, token);
-                result.AddRange(answer);
-                token = answer.ContinuationToken;
-                
-            } while (token != null);
-            return result;
+            DoOperation(entity, TableOperation.Replace);
         }
+
+        public void UpdateEntitiesSequentially<T>(List<T> entities) where T : TableEntity
+        {
+            DoOperationsSequentially(entities, TableOperation.Replace);
+        }
+
+        public bool UpdateEntitiesParallel<T>(List<T> entities, int? timeout = default(int?), CancellationToken token = default(CancellationToken), int maxNumberOfTasks = 4) where T : TableEntity
+        {
+            return ProcessEntitiesParallel(entities, UpdateEntitiesSequentially, timeout, token, maxNumberOfTasks);
+        }
+        #endregion
     }
 }
