@@ -59,7 +59,7 @@ namespace AzureTableStorage
                     }
                 } while (counter < attempts);
                 if (counter == attempts)
-                    throw new AzureTableStorageAPIException($"Table {tableName} was not created {attempts} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.");
+                    throw new AzureTableStorageAPIException($"Table {tableName} was not created in {attempts} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.");
             }
 
             var exist = table.Exists();
@@ -91,8 +91,9 @@ namespace AzureTableStorage
                     Thread.Sleep(2000 + random.Next(0, 3000));
                 } while (counter < attempts);
                 if (counter == attempts)
-                    throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} {attempts} attempts.");
-            }                       
+                    throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} in {attempts} attempts.");
+            }
+            TableName = null;
 
             return res;
         }
@@ -203,7 +204,7 @@ namespace AzureTableStorage
                 return false;
 
             var desiredPages = entities.Count / maxPackSize + (entities.Count % maxPackSize == 0 ? 0 : 1);
-            var pages = desiredPages > 5 ? 5 : desiredPages;
+            var pages = desiredPages > maxNumberOfTasks ? maxNumberOfTasks : desiredPages;
 
             var size = entities.Count / pages;
             var tasks = new Task[pages];
