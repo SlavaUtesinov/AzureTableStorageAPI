@@ -2,7 +2,7 @@
 
 ## 1. Summary
 
-This project deals with Azure Storage Tables. With the help of it, one can add, read and delete data. Most of these operations can be performed parallel and by batches with implementing caching strategy, that provides significant reduction of execution time. Also when you want to get data, you can specify complicated condition in **Entity Framework** *.Where* style.
+This project deals with Azure Storage Tables. With the help of it, one can perform almost any permissible operation: add, remove, update, delete and other. Most of these operations can be performed parallel and by batches with implementing of caching strategy, that provides significant reduction of execution time. Also when you want to get data, you can specify enough complicated condition in **Entity Framework .Where** style.
 
 ## 2. Usage example
 
@@ -41,6 +41,7 @@ Table of contents
        * [UpdateEntity](#updateentity)
        * [UpdateEntitiesSequentially](#updateentitiessequentially)
        * [UpdateEntitiesParallel](#updateentitiesparallel)
+    * [Generic solution](#generic-solution)
     * [Delete table](#delete-table)   
 5. [Tests](#5-tests)
 6. [Notes](#6-notes)
@@ -122,7 +123,7 @@ where first argument is `PartitionKey` and second one is `RowKey`, generic type 
 Difference between this method and previous one, is that this method gets data from Azure server by portions with the help of `TableContinuationToken`, whereas `GetEntities` method get all items on one time. So, if you expect that, number of items will be great, the recommendation is to use `GetBigDataEntities` method.
 
 ####GetDataWithConditions
-If you want to get not only the one entity by specifying `PartitionKey` and `RowKey`, or all entities from table, you can specify condition in **Entity Framework** *.Where* style:
+If you want to get not only the one entity by specifying `PartitionKey` and `RowKey`, or all entities from table, you can specify condition in **Entity Framework .Where** style:
 
     var date = DateTime.Now.AddDays(-10);
     var items = service.GetEntities<Event>(x => (x.PartitionKey == "Political" && !(x.Cost <= 50000.55) && 200000 < x.NumberOfParticipants) || (x.Positive == true && x.DateTime >= date));
@@ -131,10 +132,10 @@ If you want to get not only the one entity by specifying `PartitionKey` and `Row
 > 
 >  Unfortunately, one can not create any condition, only the combinations of simple conditions are permissible. You can't write somethig like this: 
 > 
->  - x.PartitionKey.Contains("Pol")
->  - x.DateTime >= DateTime.Now.AddDays(-10)
->  - x.Cost <= 123.23 / 34.2
->  - x.Positive == 2 > 3
+>  - `x.PartitionKey.Contains("Pol")`
+>  - `x.DateTime >= DateTime.Now.AddDays(-10)`
+>  - `x.Cost <= 123.23 / 34.2`
+>  - `x.Positive == 2 > 3`
 >  - and so on
 > 
 > If you want to use complicated query like, shown above, you firstly should create and assign variables before query execution and then use this variables inside predicate, see usage of date: `var date = DateTime.Now.AddDays(-10)`, i.e. each operand must be atomic.
@@ -160,7 +161,7 @@ GetBigDataEntities method also supports predicate usage.
 
 Anything was said about [AddEntitiesParallel](#addentitiesparallel): timeout, token, maxNumberOfTasks, CancellationToken is fully applicable to RemoveEntitiesParallel method.
 
-> **Note** 
+> **Note:** 
 > If you want to delete entities, that were no initially received from Azure server, you will take a exception, because of concurrency checking on server side. But `AzureTableStorageAPI` will check all entities, that you intent to remove and, if it is needed,  will reload some of them before execution of remove operation, so you shouldn't worry about this situation.
 
 [back to top](#table-of-contents)
@@ -179,6 +180,28 @@ Anything was said about [Remove](#remove) **is fully applicable** to [Update](#u
     
     service.CancellationToken = source1.Token;
     service.UpdateEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
+[back to top](#table-of-contents)
+###Generic solution
+As you noticed, [Remove](#remove) and [Update](#update) sections are the same. It is due to common programming algorithms, which are implemented at this methods. So, there is one shared entry point for this methods and it's name starts with *"DoOperation"* prefix. Let's consider some code equivalents:
+
+    service.UpdateEntitiesParallel(items);
+    service.DoOperationsParallel(items, TableOperation.Replace);
+    
+    service.RemoveEntitiesParallel(items);
+    service.DoOperationsParallel(items, TableOperation.Delete);
+    
+    service.UpdateEntitiesSequentially(items);
+    service.DoOperationsSequentially(items, TableOperation.Replace);
+    
+    service.UpdateEntity(item);
+    service.DoOperation(item, TableOperation.Replace);
+So, one can write any method and result will be the same. Moreover, you can perform custom operations, such as `TableOperation.InsertOrReplace`, `TableOperation.InsertOrMerge` and so on:
+
+    service.DoOperationsSequentially(items, TableOperation.InsertOrReplace);
+    service.DoOperation(item, TableOperation.InsertOrReplace);
+
+> **Note:**
+> For performance reason, the recommendation is to use *"Add"* prefixed methods instead of combination of corresponding *"DoOperation"* method with  `TableOperation.Insert` argument, passed into it.
 
 [back to top](#table-of-contents)
 ###Delete table
