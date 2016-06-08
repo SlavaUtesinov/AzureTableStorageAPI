@@ -66,16 +66,17 @@ namespace Tests
             LockWrapper(() =>
             {
                 var source = new CancellationTokenSource();
-                service.CancellationToken = source.Token;
 
-                var sw = Stopwatch.StartNew();
-                service.AddEntitiesParallel(GenerateData(initialData.Count * 20), timeout: 5000);
-                sw.Stop();
-                source.Cancel();
+                using (service.SetCancellationToken(source.Token))
+                {
+                    var sw = Stopwatch.StartNew();
+                    service.AddEntitiesParallel(GenerateData(initialData.Count * 20), timeout: 5000);
+                    sw.Stop();
+                    source.Cancel();
+                    Assert.IsTrue(sw.ElapsedMilliseconds < 5500);
+                }                    
 
-                var remote = service.GetEntities<Event>();
-
-                Assert.IsTrue(sw.ElapsedMilliseconds < 5500);
+                var remote = service.GetEntities<Event>();                
                 Assert.IsTrue(remote.Count > initialData.Count && remote.Count < initialData.Count * 21);
             });
         }
@@ -129,17 +130,18 @@ namespace Tests
         {
             LockWrapper(() =>
             {
-                var source = new CancellationTokenSource();
-                service.CancellationToken = source.Token;
+                var source = new CancellationTokenSource();                
 
-                var sw = Stopwatch.StartNew();
-                service.RemoveEntitiesParallel(initialData.Where(x => x.PartitionKey == "Political").ToList(), 1000);
-                sw.Stop();
-                source.Cancel();
-
-                var remote = service.GetEntities<Event>();
-
-                Assert.IsTrue(sw.ElapsedMilliseconds < 1500);
+                using (service.SetCancellationToken(source.Token))
+                {
+                    var sw = Stopwatch.StartNew();
+                    service.RemoveEntitiesParallel(initialData.Where(x => x.PartitionKey == "Political").ToList(), 1000);
+                    sw.Stop();
+                    source.Cancel();
+                    Assert.IsTrue(sw.ElapsedMilliseconds < 1500);
+                }
+                    
+                var remote = service.GetEntities<Event>();                
                 Assert.IsTrue(remote.Count < initialData.Count && remote.Count > 0);
             });
         }
@@ -220,7 +222,7 @@ namespace Tests
         public void DoOperationsInsertOrReplace()
         {
             LockWrapper(() =>
-            {
+            {                
                 var existing = initialData.Where(x => x.PartitionKey == "Political").ToList();
                 var guid = Guid.NewGuid();
                 existing.ForEach(x => x.Code = guid);
@@ -245,15 +247,17 @@ namespace Tests
         {
             LockWrapper(() =>
             {
-                service.TableName = testTableName;            
+                var remote = new List<Event>();
 
-                service.AddEntitiesSequentially(initialData);
-                service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Political").ToList());
+                using (service.SetTableName(testTableName))
+                {
+                    service.AddEntitiesSequentially(initialData);
+                    service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Political").ToList());
 
-                var remote = service.GetEntities<Event>();
-                Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Political").Count(), remote.Count);
-
-                service.TableName = null;
+                    remote = service.GetEntities<Event>();
+                    Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Political").Count(), remote.Count);
+                }                    
+                                
                 service.AddEntitiesSequentially(GenerateData());
                 remote = service.GetEntities<Event>();
                 Assert.AreEqual(initialData.Count * 2, remote.Count);

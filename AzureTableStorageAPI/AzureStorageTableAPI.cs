@@ -15,8 +15,35 @@ namespace AzureTableStorage
 {    
     public class AzureTableStorageAPI : IAzureTableStorageAPI
     {
-        public string TableName { get; set; }
-        public CancellationToken CancellationToken { get; set; }
+        class AzureTableStorageAPIDisposable : IDisposable
+        {
+            private Action dispose { get; set; }
+
+            public AzureTableStorageAPIDisposable(Action dispose)
+            {
+                this.dispose = dispose;
+            }
+
+            public void Dispose()
+            {
+                dispose();
+            }
+        }
+
+        private string TableName { get; set; }
+        private CancellationToken CancellationToken { get; set; }
+
+        public IDisposable SetTableName(string tableName)
+        {
+            TableName = tableName;
+            return new AzureTableStorageAPIDisposable(() => TableName = null);
+        }
+
+        public IDisposable SetCancellationToken(CancellationToken token)
+        {
+            CancellationToken = token;
+            return new AzureTableStorageAPIDisposable(() => CancellationToken = default(CancellationToken));
+        }
 
         //https://msdn.microsoft.com/en-us/library/azure/dd894038.aspx
         private const int maxPackSize = 100;        
@@ -77,25 +104,25 @@ namespace AzureTableStorage
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            TableName = name;
-            var res = GetTable(null, attempt2delete: true).DeleteIfExists();
-            if(res)
+            using (SetTableName(name))
             {
-                CloudTable table;
-                var counter = 0;
-                const int attempts = 10;
-                do
+                var res = GetTable(null, attempt2delete: true).DeleteIfExists();
+                if (res)
                 {
-                    if (tables.TryRemove(name, out table))
-                        break;
-                    Thread.Sleep(2000 + random.Next(0, 3000));
-                } while (counter < attempts);
-                if (counter == attempts)
-                    throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} in {attempts} attempts.");
-            }
-            TableName = null;
-
-            return res;
+                    CloudTable table;
+                    var counter = 0;
+                    const int attempts = 10;
+                    do
+                    {
+                        if (tables.TryRemove(name, out table))
+                            break;
+                        Thread.Sleep(2000 + random.Next(0, 3000));
+                    } while (counter < attempts);
+                    if (counter == attempts)
+                        throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} in {attempts} attempts.");
+                }
+                return res;
+            }                            
         }
 
 

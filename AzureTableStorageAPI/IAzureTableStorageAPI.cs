@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 namespace AzureTableStorage
 {
     public interface IAzureTableStorageAPI
-    {
-        string TableName { get; set; }
-        CancellationToken CancellationToken { get; set; }
+    {        
+        IDisposable SetTableName(string tableName);
+        IDisposable SetCancellationToken(CancellationToken token);
 
         bool DeleteTable(string name);
 

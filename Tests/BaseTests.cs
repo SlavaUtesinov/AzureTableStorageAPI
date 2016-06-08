@@ -51,8 +51,7 @@ namespace Tests
         }
         
         public virtual void Cleanup()
-        {
-            service.CancellationToken = default(CancellationToken);            
+        {            
             service.DeleteTable("EventTable");            
         }
     }
