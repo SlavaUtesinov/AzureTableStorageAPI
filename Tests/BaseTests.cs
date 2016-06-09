@@ -45,14 +45,15 @@ namespace Tests
         }
         
         public virtual void Initialize()
-        {
+        {            
             initialData = GenerateData();
             service.AddEntitiesSequentially(initialData);
         }
         
         public virtual void Cleanup()
         {            
-            service.DeleteTable("EventTable");            
+            service.DeleteTable("EventTable");
+            Thread.Sleep(4000);
         }
     }
 }

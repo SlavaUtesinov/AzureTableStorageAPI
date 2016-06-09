@@ -6,16 +6,16 @@ This project deals with Azure Storage Tables. With the help of it, one can perfo
 
 ## 2. Usage example
 
-    var api = new AzureTableStorageAPI();
+    var service = new AzureTableStorageAPI();
     var person = new Person{ RowKey = "1", PartitionKey = "Man", Age = 27, Name = "Tom", Address = "London", PostalCode = 121343 };
             
-    api.AddEntity(person);
+    service.AddEntity(person);
     //table's name will be "PersonTable", see convention section below
     
-    person = api.GetEntity("Man", "1");
-    person = api.GetEntities<Person>(x => (x.PartitionKey == "Man" && x.Age > 25) || x.Address == "Moscow" || x.PostalCode == 223545).First();
+    person = service.GetEntity("Man", "1");
+    person = service.GetEntities<Person>(x => (x.PartitionKey == "Man" && x.Age > 25) || x.Address == "Moscow" || x.PostalCode == 223545).First();
     
-    api.RemoveEntity(person);
+    service.RemoveEntity(person);
 
 Table of contents
 -------------------
@@ -51,7 +51,17 @@ Table of contents
 [back to top](#table-of-contents)
 ## 3. Conventions
 
-There is the only one convention - when you perform any operation, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word, for example, if we have class with name `Person` as shown at [usage example](#2-usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: before operation execution, set your custom table name to `TableName` property, but don't forget, that this table's name will be actual for all remaining time and for all operations, to return back to convention just set `null` value to this property.
+There is the only one convention - when you perform any operation, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word; for example, if we have class with name `Person` as shown at [usage example](#2-usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: just wrap your code into using statement:
+
+    using (service.SetTableName("MyCustomTableName"))
+    {
+         //your code...
+    }
+
+> **Note:**
+> All code inside `using` block will use *"MyCustomTableName"*, as table name, for all operations(except [DeleteTable](#delete-table) method). After this block convention will be actual again.
+
+    
 
 [back to top](#table-of-contents)
 ## 4. Main operations
@@ -71,7 +81,7 @@ Let's consider some class, inherited from `TableEntity` type, which we will use 
     }
 And instance of `AzureTableStorageAPI` class:
 
-    var service = new new AzureTableStorageAPI();
+    var service = new AzureTableStorageAPI();
 
 [back to top](#table-of-contents)
 ### Add
@@ -98,12 +108,15 @@ One can change the max number of tasks, which may be used:
 
     service.AddEntitiesParallel(data, timeout: 5000, token: source.Token, maxNumberOfTasks: 3);
 
-If you want to cancel execution of this operation, you can assign `CancellationToken` property:
+If you want to cancel execution of this operation, you should wrap your code into `using` statement:
 
-    service.CancellationToken = source.Token;
-    service.AddEntitiesParallel(data, timeout: 5000);
-    source.Cancel();
-But, then you should set to this property `null` value, to prevent it's accidentally usage in future operations, logic is the same as in case of [TableName](#3-conventions) property.    
+    var source = new CancellationTokenSource();
+    using (service.SetCancellationToken(source.Token))
+    {
+         service.AddEntitiesParallel(data, timeout: 5000);
+         source.Cancel();
+    }
+This means, that all code inside this block will share one token, so `using`s content should be as small as it possible and consists of only code that you may attempt to cancel.
 
 [back to top](#table-of-contents)
 ###Get
@@ -155,9 +168,12 @@ GetBigDataEntities method also supports predicate usage.
 
     var source1 = new CancellationTokenSource();
     var source2 = new CancellationTokenSource();
-    
-    service.CancellationToken = source1.Token;
-    service.RemoveEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
+        
+    using(service.SetCancellationToken(source1.Token))
+    {
+        service.RemoveEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
+        source1.Cancel();
+    }
 
 Anything was said about [AddEntitiesParallel](#addentitiesparallel): timeout, token, maxNumberOfTasks, CancellationToken is fully applicable to RemoveEntitiesParallel method.
 
@@ -175,11 +191,7 @@ Anything was said about [Remove](#remove) **is fully applicable** to [Update](#u
 
     service.UpdateEntitiesSequentially(items);
 ####UpdateEntitiesParallel
-    var source1 = new CancellationTokenSource();
-    var source2 = new CancellationTokenSource();
-    
-    service.CancellationToken = source1.Token;
-    service.UpdateEntitiesParallel(items, timeout: 5000, token: source2.Token, maxNumberOfTasks: 3);
+    service.UpdateEntitiesParallel(items, timeout: 5000, token: source.Token, maxNumberOfTasks: 3);
 [back to top](#table-of-contents)
 ###Generic solution
 As you noticed, [Remove](#remove) and [Update](#update) sections are the same. It is due to common programming algorithms, which are implemented at this methods. So, there is one shared entry point for this methods and it's name starts with *"DoOperation"* prefix. Let's consider some code equivalents:
@@ -226,7 +238,7 @@ If you will build main project at Release mode, you will have after build error.
 [back to top](#table-of-contents)
 ##7. How to install
 
-With the help of [Nuget](https://www.nuget.org/):
+With the help of [Nuget](https://www.nuget.org/packages/Azure.TableStorage.API/):
 
     PM> Install-Package Azure.TableStorage.API
 

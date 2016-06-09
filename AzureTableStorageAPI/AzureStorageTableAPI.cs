@@ -34,14 +34,15 @@ namespace AzureTableStorage
         private CancellationToken CancellationToken { get; set; }
 
         public IDisposable SetTableName(string tableName)
-        {
-            TableName = tableName;
-            return new AzureTableStorageAPIDisposable(() => TableName = null);
+        {            
+            var temp = TableName;
+            TableName = tableName;            
+            return new AzureTableStorageAPIDisposable(() => TableName = temp);            
         }
 
         public IDisposable SetCancellationToken(CancellationToken token)
         {
-            CancellationToken = token;
+            CancellationToken = token;            
             return new AzureTableStorageAPIDisposable(() => CancellationToken = default(CancellationToken));
         }
 
