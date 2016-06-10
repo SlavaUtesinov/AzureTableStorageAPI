@@ -14,7 +14,8 @@ namespace Tests
     public class CoreTests : BaseTests
     {
         protected string testTableName { get; } = "TestTable";
-        
+        protected string testTableName2 { get; } = "TestTable2";
+
         public override void Initialize()
         {
             base.Initialize();
@@ -23,6 +24,7 @@ namespace Tests
         public override void Cleanup()
         {            
             service.DeleteTable(testTableName);
+            service.DeleteTable(testTableName2);
             base.Cleanup();
         }
 
@@ -66,6 +68,8 @@ namespace Tests
             LockWrapper(() =>
             {
                 var source = new CancellationTokenSource();
+                var source2 = new CancellationTokenSource();
+                var remote = new List<Event>();
 
                 using (service.SetCancellationToken(source.Token))
                 {
@@ -74,9 +78,19 @@ namespace Tests
                     sw.Stop();
                     source.Cancel();
                     Assert.IsTrue(sw.ElapsedMilliseconds < 5500);
-                }                    
 
-                var remote = service.GetEntities<Event>();                
+                    using (service.SetCancellationToken(source2.Token))
+                    {
+                        using (service.SetTableName(testTableName))
+                        {
+                            service.AddEntitiesParallel(GenerateData(initialData.Count * 20), timeout: 5000);
+                            remote = service.GetEntities<Event>();
+                            Assert.IsTrue(remote.Count > 0 && remote.Count < initialData.Count * 20);
+                        }
+                    }
+                }                 
+
+                remote = service.GetEntities<Event>();                
                 Assert.IsTrue(remote.Count > initialData.Count && remote.Count < initialData.Count * 21);
             });
         }
@@ -206,15 +220,20 @@ namespace Tests
         [TestCategory("DoOperations")]
         public void DoOperations()
         {
-            UpdateTemplate((x) => service.DoOperation(x, TableOperation.Replace));
+            lock(lockObject)
+            {
+                UpdateTemplate((x) => service.DoOperation(x, TableOperation.Replace));
 
-            UpdateEntitiesTemplate((x) => {
-                service.DoOperationsSequentially(x, TableOperation.Replace);
-            });
+                UpdateEntitiesTemplate((x) =>
+                {
+                    service.DoOperationsSequentially(x, TableOperation.Replace);
+                });
 
-            UpdateEntitiesTemplate((x) => {
-                service.DoOperationsParallel(x, TableOperation.Replace);
-            });
+                UpdateEntitiesTemplate((x) =>
+                {
+                    service.DoOperationsParallel(x, TableOperation.Replace);
+                });
+            }                
         }
 
         [TestMethod]
@@ -253,6 +272,15 @@ namespace Tests
                 {
                     service.AddEntitiesSequentially(initialData);
                     service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Political").ToList());
+
+                    using (service.SetTableName(testTableName2))
+                    {
+                        service.AddEntitiesSequentially(initialData);
+                        service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Social").ToList());
+
+                        remote = service.GetEntities<Event>();
+                        Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Social").Count(), remote.Count);
+                    }
 
                     remote = service.GetEntities<Event>();
                     Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Political").Count(), remote.Count);

@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzureTableStorage
-{    
+{
     public class AzureTableStorageAPI : IAzureTableStorageAPI
     {
         class AzureTableStorageAPIDisposable : IDisposable
@@ -34,17 +34,18 @@ namespace AzureTableStorage
         private CancellationToken CancellationToken { get; set; }
 
         public IDisposable SetTableName(string tableName)
-        {            
+        {
             var temp = TableName;
-            TableName = tableName;            
-            return new AzureTableStorageAPIDisposable(() => TableName = temp);            
+            TableName = tableName;
+            return new AzureTableStorageAPIDisposable(() => TableName = temp);
         }
 
         public IDisposable SetCancellationToken(CancellationToken token)
         {
-            CancellationToken = token;            
-            return new AzureTableStorageAPIDisposable(() => CancellationToken = default(CancellationToken));
-        }
+            var temp = CancellationToken;
+            CancellationToken = token;
+            return new AzureTableStorageAPIDisposable(() => CancellationToken = temp);
+        }                
 
         //https://msdn.microsoft.com/en-us/library/azure/dd894038.aspx
         private const int maxPackSize = 100;        

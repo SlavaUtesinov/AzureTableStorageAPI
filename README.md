@@ -51,15 +51,19 @@ Table of contents
 [back to top](#table-of-contents)
 ## 3. Conventions
 
-There is the only one convention - when you perform any operation, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word; for example, if we have class with name `Person` as shown at [usage example](#2-usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: just wrap your code into using statement:
+There is the only one convention - when you perform any operation, default name of current Azure Storage Table will be concatenation of type(class) name and *"Table"* word; for example, if we have class with name `Person` as shown at [usage example](#2-usage-example) Azure table's name will be *"PersonTable"*. If you want to specify table name by your own, it is very easy to do: just wrap your code into `using` statement:
 
     using (service.SetTableName("MyCustomTableName"))
     {
          //your code...
+        using (service.SetTableName("MyCustomTableName2"))
+        {
+             //your code...
+        }
     }
 
 > **Note:**
-> All code inside `using` block will use *"MyCustomTableName"*, as table name, for all operations(except [DeleteTable](#delete-table) method). After this block convention will be actual again.
+> All the code inside `using` block will use specified table's name for all operations(except [DeleteTable](#delete-table) method), after this block convention will be actual again. But one can use nested `using`s(as shown above): after each `using` table name will be returned to previous state and finally to convention state.
 
     
 
@@ -116,7 +120,7 @@ If you want to cancel execution of this operation, you should wrap your code int
          service.AddEntitiesParallel(data, timeout: 5000);
          source.Cancel();
     }
-This means, that all code inside this block will share one token, so `using`s content should be as small as it possible and consists of only code that you may attempt to cancel.
+This means, that all code inside this block will share one token, so `using`s content should be as small as it possible and consists of only code that you may attempt to cancel. Also you can use nested `using`s, so after each `using`, cancellation token will be returned to previous state. logic is the same as with table name's changing:(see [convention section](#3-conventions)).
 
 [back to top](#table-of-contents)
 ###Get
@@ -220,6 +224,8 @@ So, one can write any method and result will be the same. Moreover, you can perf
 
     service.DeleteTable("EventTable");    
 
+> **Attention:** It is not guaranteed, that after this command, table will be immediately deleted(it is caused by WindowsAzure.Storage API or other independent from this project reasons). So, if you intent to delete table and soon do some operation on this table, it will be a good practice to wait some time after deleting (use `Thread.Sleep`, for example) to ensure that table is completely deleted. Time of actual deleting depends on (as I can assume) table's size: you can think about this as: `deletingTime = Nrecords*k`, where `k` is `const` value.
+
 [back to top](#table-of-contents)
 ##5. Tests
 
@@ -227,7 +233,7 @@ This repository consists of two projects: main project and tests project. Tests 
 
 [back to top](#table-of-contents)
 ##6. Notes
-If you will build main project at Release mode, you will have after build error. It is caused by [Nuget](https://www.nuget.org/) publishing stuff. To fix this problem just edit AzureTableStorageAPI.csproj file: delete or comment section:
+If you will build main project at Release mode, you will have after build error. It is caused by [Nuget publishing stuff](https://docs.nuget.org/create/creating-and-publishing-a-package). To fix this problem just edit AzureTableStorageAPI.csproj file: delete or comment section:
 
       <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
         <Exec Command="nuget pack AzureTableStorageAPI.csproj -Prop Configuration=Release">
@@ -246,7 +252,7 @@ With the help of [Nuget](https://www.nuget.org/packages/Azure.TableStorage.API/)
 ##8. License
 The MIT License (MIT)
 
-Copyright (c) 2016 Slava Utesinov
+Copyright (c) 2016 SlavaUtesinov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,

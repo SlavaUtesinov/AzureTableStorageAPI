@@ -53,7 +53,7 @@ namespace Tests
         public virtual void Cleanup()
         {            
             service.DeleteTable("EventTable");
-            Thread.Sleep(4000);
+            Thread.Sleep(5000);
         }
     }
 }
