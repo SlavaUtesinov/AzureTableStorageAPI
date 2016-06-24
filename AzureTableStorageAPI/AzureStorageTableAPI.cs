@@ -58,7 +58,7 @@ namespace AzureTableStorage
             CloudTable table2;
             var tableName = TableName ?? target.Name.Replace("_", "") + "Table";
             if (CreateIfNotExists && attempt2delete)
-                throw new AzureTableStorageAPIException($"It is not possible to create and delete table {tableName} simultaneously.");
+                throw new AzureTableStorageAPIException(string.Format("It is not possible to create and delete table {0} simultaneously.", tableName));
 
             if (tables.TryGetValue(tableName, out table))
                 return table;
@@ -88,12 +88,12 @@ namespace AzureTableStorage
                     }
                 } while (counter < attempts);
                 if (counter == attempts)
-                    throw new AzureTableStorageAPIException($"Table {tableName} was not created in {attempts} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.");
+                    throw new AzureTableStorageAPIException(string.Format("Table {0} was not created in {1} attempts, likely it is not deleted yet or nuget package WindowsAzure.Storage is not installed.", tableName, attempts));
             }
 
             var exist = table.Exists();
             if (!exist && !attempt2delete)
-                throw new AzureTableStorageAPIException($"Table {tableName} should be created at first!");
+                throw new AzureTableStorageAPIException(string.Format("Table {0} should be created at first!", tableName));
 
             if (exist)
                 tables.AddOrUpdate(tableName, table, (key, value) => value);
@@ -121,7 +121,7 @@ namespace AzureTableStorage
                         Thread.Sleep(2000 + random.Next(0, 3000));
                     } while (counter < attempts);
                     if (counter == attempts)
-                        throw new AzureTableStorageAPIException($"Failed to delete reference from dictionary on table {name} in {attempts} attempts.");
+                        throw new AzureTableStorageAPIException(string.Format("Failed to delete reference from dictionary on table {0} in {1} attempts.", name, attempts));
                 }
                 return res;
             }                            

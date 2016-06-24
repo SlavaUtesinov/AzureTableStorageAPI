@@ -45,7 +45,7 @@ namespace AzureTableStorage
             string pattern;
             var keys = GetParams(predicate, out pattern);
 
-            var result = predicate.Body.ToString().Replace(predicate.Parameters.First().Name + ".", "").Replace($"{pattern}.", "");
+            var result = predicate.Body.ToString().Replace(predicate.Parameters.First().Name + ".", "").Replace(string.Format("{0}.", pattern), "");
             
             var argsList = new Dictionary<string, object> { { "True", "true" }, { "False", "false" } };
             if (pattern != null)
