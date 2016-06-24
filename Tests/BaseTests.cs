@@ -11,9 +11,16 @@ namespace Tests
 {    
     public abstract class BaseTests
     {
-        protected static IAzureTableStorageAPI service { get; set; } = new AzureTableStorageAPI();
-        protected static List<Event> initialData { get; set; } = new List<Event>();
-        protected static object lockObject { get; } = new object();
+        protected static readonly IAzureTableStorageAPI service;
+        protected static List<Event> initialData;
+        protected static readonly object lockObject;
+
+        static BaseTests()
+        {
+            lockObject = new object();
+            initialData = new List<Event>();
+            service = new AzureTableStorageAPI();
+        }
 
         protected List<Event> GenerateData(int count = 1000)
         {

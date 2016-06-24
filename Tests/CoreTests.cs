@@ -13,8 +13,8 @@ namespace Tests
     [TestClass]
     public class CoreTests : BaseTests
     {
-        protected string testTableName { get; } = "TestTable";
-        protected string testTableName2 { get; } = "TestTable2";
+        protected const string testTableName = "TestTable";
+        protected const string testTableName2 = "TestTable2";        
 
         public override void Initialize()
         {
