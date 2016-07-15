@@ -51,6 +51,16 @@ namespace AzureTableStorage
         private const int maxPackSize = 100;        
         private static ConcurrentDictionary<string, CloudTable> tables = new ConcurrentDictionary<string, CloudTable>();
         private static Random random = new Random();
+        private readonly string connectionString;        
+
+        public AzureTableStorageAPI(string connectionString)
+        {
+            this.connectionString = connectionString;
+        }
+
+        public AzureTableStorageAPI()
+        {            
+        }
 
         private CloudTable GetTable(Type target, bool CreateIfNotExists = false, bool attempt2delete = false)
         {            
@@ -60,10 +70,10 @@ namespace AzureTableStorage
             if (CreateIfNotExists && attempt2delete)
                 throw new AzureTableStorageAPIException(string.Format("It is not possible to create and delete table {0} simultaneously.", tableName));
 
-            if (tables.TryGetValue(tableName, out table))
+            if (tables.TryGetValue(connectionString + tableName, out table))
                 return table;
 
-            var storageAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings["StorageConnectionString"].ConnectionString);
+            var storageAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings[connectionString??"StorageConnectionString"].ConnectionString);
             var tableClient = storageAccount.CreateCloudTableClient();            
             table = tableClient.GetTableReference(tableName);
             
@@ -82,7 +92,7 @@ namespace AzureTableStorage
                     }
                     catch (StorageException)
                     {
-                        if (tables.TryGetValue(tableName, out table2))
+                        if (tables.TryGetValue(connectionString + tableName, out table2))
                             return table2;
                         Thread.Sleep(3000 + random.Next(0, 3000));
                     }
@@ -96,7 +106,7 @@ namespace AzureTableStorage
                 throw new AzureTableStorageAPIException(string.Format("Table {0} should be created at first!", tableName));
 
             if (exist)
-                tables.AddOrUpdate(tableName, table, (key, value) => value);
+                tables.AddOrUpdate(connectionString + tableName, table, (key, value) => value);
 
             return table;
         }
@@ -116,7 +126,7 @@ namespace AzureTableStorage
                     const int attempts = 10;
                     do
                     {
-                        if (tables.TryRemove(name, out table))
+                        if (tables.TryRemove(connectionString + name, out table))
                             break;
                         Thread.Sleep(2000 + random.Next(0, 3000));
                     } while (counter < attempts);

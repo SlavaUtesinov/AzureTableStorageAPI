@@ -14,17 +14,19 @@ namespace Tests
     public class CoreTests : BaseTests
     {
         protected const string testTableName = "TestTable";
-        protected const string testTableName2 = "TestTable2";        
+        protected const string testTableName2 = "TestTable2";
+        protected const string testTableName3 = "TestTable3";
 
         public override void Initialize()
         {
             base.Initialize();
         }
-        
+
         public override void Cleanup()
-        {            
+        {
             service.DeleteTable(testTableName);
             service.DeleteTable(testTableName2);
+            service.DeleteTable(testTableName3);
             base.Cleanup();
         }
 
@@ -32,12 +34,12 @@ namespace Tests
         [TestCategory("Add")]
         public void AddEntity()
         {
-            LockWrapper(() => 
+            LockWrapper(() =>
             {
                 var guid = Guid.NewGuid();
                 service.AddEntity(new Event { RowKey = guid.ToString(), PartitionKey = "Political", DateTime = DateTime.Now });
                 Assert.IsNotNull(service.GetEntity<Event>("Political", guid.ToString()));
-            });            
+            });
         }
 
         [TestMethod]
@@ -88,9 +90,9 @@ namespace Tests
                             Assert.IsTrue(remote.Count > 0 && remote.Count < initialData.Count * 20);
                         }
                     }
-                }                 
+                }
 
-                remote = service.GetEntities<Event>();                
+                remote = service.GetEntities<Event>();
                 Assert.IsTrue(remote.Count > initialData.Count && remote.Count < initialData.Count * 21);
             });
         }
@@ -100,7 +102,7 @@ namespace Tests
         public void GetBigDataEntities()
         {
             LockWrapper(() =>
-            {                
+            {
                 Assert.AreEqual(initialData.Count, service.GetBigDataEntities<Event>().Count);
             });
         }
@@ -144,7 +146,7 @@ namespace Tests
         {
             LockWrapper(() =>
             {
-                var source = new CancellationTokenSource();                
+                var source = new CancellationTokenSource();
 
                 using (service.SetCancellationToken(source.Token))
                 {
@@ -154,8 +156,8 @@ namespace Tests
                     source.Cancel();
                     Assert.IsTrue(sw.ElapsedMilliseconds < 1500);
                 }
-                    
-                var remote = service.GetEntities<Event>();                
+
+                var remote = service.GetEntities<Event>();
                 Assert.IsTrue(remote.Count < initialData.Count && remote.Count > 0);
             });
         }
@@ -177,7 +179,7 @@ namespace Tests
         [TestCategory("Update")]
         public void UpdateEntity()
         {
-            UpdateTemplate(service.UpdateEntity);            
+            UpdateTemplate(service.UpdateEntity);
         }
 
         private void UpdateEntitiesTemplate(Action<List<Event>> testMethod)
@@ -204,7 +206,7 @@ namespace Tests
         [TestCategory("Update")]
         public void UpdateEntitiesSequentially()
         {
-            UpdateEntitiesTemplate(service.UpdateEntitiesSequentially);               
+            UpdateEntitiesTemplate(service.UpdateEntitiesSequentially);
         }
 
         [TestMethod]
@@ -220,7 +222,7 @@ namespace Tests
         [TestCategory("DoOperations")]
         public void DoOperations()
         {
-            lock(lockObject)
+            lock (lockObject)
             {
                 UpdateTemplate((x) => service.DoOperation(x, TableOperation.Replace));
 
@@ -233,7 +235,7 @@ namespace Tests
                 {
                     service.DoOperationsParallel(x, TableOperation.Replace);
                 });
-            }                
+            }
         }
 
         [TestMethod]
@@ -241,7 +243,7 @@ namespace Tests
         public void DoOperationsInsertOrReplace()
         {
             LockWrapper(() =>
-            {                
+            {
                 var existing = initialData.Where(x => x.PartitionKey == "Political").ToList();
                 var guid = Guid.NewGuid();
                 existing.ForEach(x => x.Code = guid);
@@ -278,17 +280,42 @@ namespace Tests
                         service.AddEntitiesSequentially(initialData);
                         service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Social").ToList());
 
+                        using (service.SetTableName(testTableName3))
+                        {
+                            service.AddEntitiesSequentially(initialData);
+                            service.RemoveEntitiesSequentially(initialData.Where(x => x.PartitionKey == "Nature").ToList());
+
+                            remote = service.GetEntities<Event>();
+                            Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Nature").Count(), remote.Count);
+                        }
+
                         remote = service.GetEntities<Event>();
                         Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Social").Count(), remote.Count);
                     }
 
                     remote = service.GetEntities<Event>();
                     Assert.AreEqual(initialData.Where(x => x.PartitionKey != "Political").Count(), remote.Count);
-                }                    
-                                
+                }
+
                 service.AddEntitiesSequentially(GenerateData());
                 remote = service.GetEntities<Event>();
                 Assert.AreEqual(initialData.Count * 2, remote.Count);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("TwoConnectionStrings")]
+        public void TwoConnectionStrings()
+        {
+            LockWrapper(() =>
+            {
+                var service2 = new AzureTableStorageAPI();
+                service2.AddEntitiesParallel(GenerateData(5000));
+                service.AddEntitiesParallel(GenerateData(5000));
+
+                Thread.Sleep(6000);
+                var remote = service.GetBigDataEntities<Event>();
+                Assert.AreEqual(11000, remote.Count);
             });
         }
     }

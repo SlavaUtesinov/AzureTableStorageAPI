@@ -19,7 +19,7 @@ namespace Tests
         {
             lockObject = new object();
             initialData = new List<Event>();
-            service = new AzureTableStorageAPI();
+            service = new AzureTableStorageAPI("AzureTableStorageEmulatorConnectionString");
         }
 
         protected List<Event> GenerateData(int count = 1000)

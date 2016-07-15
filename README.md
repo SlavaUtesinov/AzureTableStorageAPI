@@ -85,7 +85,11 @@ Let's consider some class, inherited from `TableEntity` type, which we will use 
     }
 And instance of `AzureTableStorageAPI` class:
 
+    //at this case connection string's name will be: "StorageConnectionString"
     var service = new AzureTableStorageAPI();
+    
+    //or you can specify another one:
+    service = new AzureTableStorageAPI("MyOwnConnectionStringName");
 
 [back to top](#table-of-contents)
 ### Add
