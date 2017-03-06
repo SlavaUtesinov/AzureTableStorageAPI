@@ -1,8 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.WindowsAzure.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tests
@@ -14,7 +16,22 @@ namespace Tests
         {
             LockWrapper(() => 
             {
-                var azure = azureLoader();
+                List<Event> azure = null;
+                for (var i = 0;  i < 3; i++)
+                {
+                    try
+                    {
+                        azure = azureLoader();
+                        break;
+                    }
+                    catch(StorageException)
+                    {
+                        if (i == 2)
+                            throw;
+                        else
+                            Thread.Sleep(2000);
+                    }
+                }                
                 var local = initialData.Where(x => (x.PartitionKey == "Political" && !(x.Сost <= 50000.55) && 200000 < x.NumberOfParticipants) || (x.Positive == true && x.DateTime >= date)).ToList();
 
                 Assert.AreNotEqual(0, local.Count);
