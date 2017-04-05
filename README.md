@@ -92,18 +92,18 @@ And instance of `AzureTableStorageAPI` class:
     service = new AzureTableStorageAPI("MyOwnConnectionStringName");
 
 [back to top](#table-of-contents)
-### Add
-####AddEntity
+## Add
+### AddEntity
 
     service.AddEntity(new Event { RowKey = guid.ToString(), PartitionKey = "Political", DateTime = DateTime.Now });
 
-####AddEntitiesSequentially
+### AddEntitiesSequentially
 
     var data = new List<Event>();
     // data initialization not shown
     service.AddEntitiesSequentially(data);
 
-####AddEntitiesParallel
+### AddEntitiesParallel
 This method sends data to remote server parallel, with the help of max 4(default value) Tasks.
 
     service.AddEntitiesParallel(data);
@@ -127,23 +127,23 @@ If you want to cancel execution of this operation, you should wrap your code int
 This means, that all code inside this block will share one token, so `using`s content should be as small as it possible and consists of only code that you may attempt to cancel. Also you can use nested `using`s, so after each `using`, cancellation token will be returned to previous state. logic is the same as with table name's changing:(see [convention section](#3-conventions)).
 
 [back to top](#table-of-contents)
-###Get
-####GetEntity
+## Get
+### GetEntity
 
     var item = service.GetEntity<Event>("Political", "1");
 where first argument is `PartitionKey` and second one is `RowKey`, generic type argument is `Event`.
 
-####GetEntities
+### GetEntities
 
     var items = service.GetEntities<Event>();    
  this query will return all entities from table.
 
-####GetBigDataEntities
+### GetBigDataEntities
 
     var  items = service.GetBigDataEntities<Event>();
 Difference between this method and previous one, is that this method gets data from Azure server by portions with the help of `TableContinuationToken`, whereas `GetEntities` method get all items on one time. So, if you expect that, number of items will be great, the recommendation is to use `GetBigDataEntities` method.
 
-####GetDataWithConditions
+### GetDataWithConditions
 If you want to get not only the one entity by specifying `PartitionKey` and `RowKey`, or all entities from table, you can specify condition in **Entity Framework .Where** style:
 
     var date = DateTime.Now.AddDays(-10);
@@ -164,15 +164,15 @@ If you want to get not only the one entity by specifying `PartitionKey` and `Row
 GetBigDataEntities method also supports predicate usage.
 
 [back to top](#table-of-contents)
-###Remove
-####RemoveEntity
+## Remove
+### RemoveEntity
 
     service.RemoveEntity(item);
     
-####  RemoveEntitiesSequentially
+###  RemoveEntitiesSequentially
 
     service.RemoveEntitiesSequentially(items);
-####RemoveEntitiesParallel
+### RemoveEntitiesParallel
 
     var source1 = new CancellationTokenSource();
     var source2 = new CancellationTokenSource();
@@ -189,19 +189,19 @@ Anything was said about [AddEntitiesParallel](#addentitiesparallel): timeout, to
 > If you want to delete entities, that were no initially received from Azure server, you will take a exception, because of concurrency checking on server side. But `AzureTableStorageAPI` will check all entities, that you intent to remove and, if it is needed,  will reload some of them before execution of remove operation, so you shouldn't worry about this situation.
 
 [back to top](#table-of-contents)
-###Update
+## Update
 Anything was said about [Remove](#remove) **is fully applicable** to [Update](#update) section, sure, except of meaning of operation.
-####UpdateEntity
+### UpdateEntity
 
     service.UpdateEntity(item);
 
-####UpdateEntitiesSequentially    
+### UpdateEntitiesSequentially    
 
     service.UpdateEntitiesSequentially(items);
-####UpdateEntitiesParallel
+### UpdateEntitiesParallel
     service.UpdateEntitiesParallel(items, timeout: 5000, token: source.Token, maxNumberOfTasks: 3);
 [back to top](#table-of-contents)
-###Generic solution
+### Generic solution
 As you noticed, [Remove](#remove) and [Update](#update) sections are the same. It is due to common programming algorithms, which are implemented at this methods. So, there is one shared entry point for this methods and it's name starts with *"DoOperation"* prefix. Let's consider some code equivalents:
 
     service.UpdateEntitiesParallel(items);
@@ -224,19 +224,19 @@ So, one can write any method and result will be the same. Moreover, you can perf
 > For performance reason, the recommendation is to use *"Add"* prefixed methods instead of combination of corresponding *"DoOperation"* method with  `TableOperation.Insert` argument, passed into it.
 
 [back to top](#table-of-contents)
-###Delete table
+## Delete table
 
     service.DeleteTable("EventTable");    
 
 > **Attention:** It is not guaranteed, that after this command, table will be immediately deleted(it is caused by WindowsAzure.Storage API or other independent from this project reasons). So, if you intent to delete table and soon do some operation on this table, it will be a good practice to wait some time after deleting (use `Thread.Sleep`, for example) to ensure that table is completely deleted. Time of actual deleting depends on (as I can assume) table's size: you can think about this as: `deletingTime = Nrecords*k`, where `k` is `const` value.
 
 [back to top](#table-of-contents)
-##5. Tests
+## 5. Tests
 
 This repository consists of two projects: main project and tests project. Tests one contains a lot of examples, they show how to use main project assembly, most of them are shown at this documentation. I used [Azure Storage Emulator](https://azure.microsoft.com/en-us/documentation/articles/storage-use-emulator/). It redirects all queries to your local database. Connection string at this case, as you can read, is constant for any users and presented at App.config file. Sure, you can use your own  connection string.
 
 [back to top](#table-of-contents)
-##6. Notes
+## 6. Notes
 If you will build main project at Release mode, you will have after build error. It is caused by [Nuget publishing stuff](https://docs.nuget.org/create/creating-and-publishing-a-package). To fix this problem just edit AzureTableStorageAPI.csproj file: delete or comment section:
 
       <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
@@ -246,14 +246,14 @@ If you will build main project at Release mode, you will have after build error.
 
 
 [back to top](#table-of-contents)
-##7. How to install
+## 7. How to install
 
 With the help of [Nuget](https://www.nuget.org/packages/Azure.TableStorage.API/):
 
     PM> Install-Package Azure.TableStorage.API
 
 [back to top](#table-of-contents)
-##8. License
+## 8. License
 The MIT License (MIT)
 
 Copyright (c) 2016 SlavaUtesinov
